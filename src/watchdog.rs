@@ -1,35 +1,40 @@
-use core;
+use bit_field::BitField;
+use volatile::Volatile;
 
 #[repr(C, packed)]
 pub struct Watchdog {
-    stctrlh: u16,
-    stctrll: u16,
-    tovalh: u16,
-    tovall: u16,
-    winh: u16,
-    winl: u16,
-    refresh: u16,
-    unlock: u16,
-    tmrouth: u16,
-    tmroutl: u16,
-    rstcnt: u16,
-    presc: u16,
+    stctrlh: Volatile<u16>,
+    stctrll: Volatile<u16>,
+    tovalh: Volatile<u16>,
+    tovall: Volatile<u16>,
+    winh: Volatile<u16>,
+    winl: Volatile<u16>,
+    refresh: Volatile<u16>,
+    unlock: Volatile<u16>,
+    tmrouth: Volatile<u16>,
+    tmroutl: Volatile<u16>,
+    rstcnt: Volatile<u16>,
+    presc: Volatile<u16>,
 }
 
 impl Watchdog {
     pub unsafe fn new() -> &'static mut Watchdog {
-        &mut *(0x40052000 as *mut Watchdog)
+        &mut *(0x4005_2000 as *mut Watchdog)
     }
 
     pub fn disable(&mut self) {
         unsafe {
-            core::ptr::write_volatile(&mut self.unlock, 0xC520);
-            core::ptr::write_volatile(&mut self.unlock, 0xD928);
-            asm!("nop" : : : "memory");
-            asm!("nop" : : : "memory");
-            let mut ctrl = core::ptr::read_volatile(&self.stctrlh);
-            ctrl &= !(0x00000001);
-            core::ptr::write_volatile(&mut self.stctrlh, ctrl);
+            // Unlock the watchdog so we can change its registers
+            self.unlock.write(0xc520);
+            self.unlock.write(0xd928);
+
+            // Wait for a bus cycle
+            asm!("nop; nop" : : : "memory");
+
+            // Disable the watchdog timer
+            self.stctrlh.update(|ctrl| {
+                ctrl.set_bit(0, false);
+            });
         }
     }
 }
