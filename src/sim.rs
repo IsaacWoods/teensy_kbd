@@ -49,4 +49,16 @@ impl Sim {
             }
         }
     }
+
+    // TODO: take and set the divider for the USB
+    pub fn set_dividers(&mut self, core: u32, bus: u32, flash: u32) {
+        let mut clkdiv: u32 = 0;
+        clkdiv.set_bits(28..32, core - 1);
+        clkdiv.set_bits(24..28, bus - 1);
+        clkdiv.set_bits(16..20, flash - 1);
+
+        unsafe {
+            self.clkdiv1.write(clkdiv);
+        }
+    }
 }
