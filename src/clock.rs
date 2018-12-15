@@ -1,5 +1,5 @@
-use volatile::Volatile;
 use bit_field::BitField;
+use volatile::Volatile;
 
 /// The crystal oscillator on the Teensy 3.2 has a capacitance of 10pf
 pub const TEENSY_32_CAPACITANCE: u8 = 10;
@@ -61,7 +61,7 @@ impl Mcg {
          * TODO: this assumes the MCG is actually in FEI mode. Check the status registers to make
          * sure this is true
          */
-        
+
         // We start by enabling the external crystal oscillator
         self.c2.update(|c2| {
             c2.set_bits(4..6, 2);
@@ -69,19 +69,19 @@ impl Mcg {
         });
 
         // Wait for it to become enabled
-        while !self.s.read().get_bit(1) { }
+        while !self.s.read().get_bit(1) {}
 
         // Move to FBE mode to begin using the external oscillator
         self.c1.update(|c1| {
-            c1.set_bits(6..8, 2);   // Use external oscillator source
-            c1.set_bits(3..6, 4);   // Divide it by 512
+            c1.set_bits(6..8, 2); // Use external oscillator source
+            c1.set_bits(3..6, 4); // Divide it by 512
             c1.set_bit(2, false);
         });
 
         // Wait for the new clock to stabilise by waiting for the FLL to be pointed at the crystal,
         // then wait for the clock source to change to the crystal oscillator
-        while self.s.read().get_bit(4) { }
-        while self.s.read().get_bits(2..4) != 2 { }
+        while self.s.read().get_bit(4) {}
+        while self.s.read().get_bits(2..4) != 2 {}
 
         // We can now transition to PBE mode by enabling the PLL.
         // We run the PLL at 72Mhz (27/6 * 16 Mhz)
@@ -98,14 +98,14 @@ impl Mcg {
         });
 
         // Wait for PLL to be enabled, then for it to become "locked" and stabilise
-        while !self.s.read().get_bit(5) { }
-        while !self.s.read().get_bit(6) { }
+        while !self.s.read().get_bit(5) {}
+        while !self.s.read().get_bit(6) {}
 
         // Move to using the PLL
         self.c1.update(|c1| {
-            c1.set_bits(6..8, 0);   // Set the oscillator source to Locked Loop
+            c1.set_bits(6..8, 0); // Set the oscillator source to Locked Loop
         });
 
-        while self.s.read().get_bits(2..4) != 3 { }
+        while self.s.read().get_bits(2..4) != 3 {}
     }
 }

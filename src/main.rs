@@ -1,7 +1,6 @@
 #![no_std]
 #![no_main]
-#![feature(lang_items)]
-#![feature(asm)]
+#![feature(lang_items, asm, const_fn, decl_macro)]
 
 extern crate bit_field;
 extern crate volatile;
