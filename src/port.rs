@@ -2,6 +2,7 @@ use bit_field::BitField;
 use volatile::Volatile;
 
 pub enum PortName {
+    B,
     C,
 }
 
@@ -37,6 +38,7 @@ pub struct GpioPin {
 impl Port {
     pub unsafe fn new(name: PortName) -> &'static mut Port {
         &mut *match name {
+            PortName::B => 0x4004_a000 as *mut Port,
             PortName::C => 0x4004_b000 as *mut Port,
         }
     }
@@ -54,6 +56,7 @@ impl Port {
     pub fn name(&self) -> PortName {
         let addr = (self as *const Port) as u32;
         match addr {
+            0x4004_a000 => PortName::B,
             0x4004_b000 => PortName::C,
             _ => unreachable!(),
         }
@@ -68,11 +71,18 @@ impl Pin {
             GpioPin::new(port.name(), self.pin)
         }
     }
+
+    /// Unsafe because only certain pins can be set as serial. Refer to the device pinout.
+    pub unsafe fn set_serial(&mut self) {
+        let port = &mut *self.port;
+        port.set_pin_mode(self.pin, 3);
+    }
 }
 
 impl GpioPin {
     pub unsafe fn new(port: PortName, pin: usize) -> GpioPin {
         let bitband = match port {
+            PortName::B => 0x43fe_0800 as *mut GpioBitband,
             PortName::C => 0x43fe_1000 as *mut GpioBitband,
         };
 

@@ -2,7 +2,9 @@ use bit_field::BitField;
 use volatile::Volatile;
 
 pub enum ClockGate {
+    PortB,
     PortC,
+    Uart0,
 }
 
 #[repr(C, packed)]
@@ -41,11 +43,21 @@ impl Sim {
     pub fn enable_clock_gate(&mut self, gate: ClockGate) {
         unsafe {
             match gate {
+                ClockGate::PortB => {
+                    self.scgc5.update(|scgc| {
+                        scgc.set_bit(10, true);
+                    });
+                }
+
                 ClockGate::PortC => {
                     self.scgc5.update(|scgc| {
                         scgc.set_bit(11, true);
                     });
                 }
+
+                ClockGate::Uart0 => self.scgc4.update(|scgc| {
+                    scgc.set_bit(10, true);
+                }),
             }
         }
     }
