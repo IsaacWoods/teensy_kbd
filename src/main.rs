@@ -13,6 +13,7 @@ mod watchdog;
 
 use clock::{Mcg, Oscillator};
 use core::fmt::Write;
+use core::panic::PanicInfo;
 use port::{Port, PortName};
 use sim::{ClockGate, Sim};
 use uart::Uart;
@@ -95,12 +96,10 @@ macro println {
         print!(concat!($fmt, "\n\r"), $($arg)*);
     }
 }
-#[lang = "panic_fmt"]
+
+#[panic_handler]
 #[no_mangle]
-pub extern "C" fn rust_begin_panic(
-    _msg: core::fmt::Arguments,
-    _file: &'static str,
-    _line: u32,
-) -> ! {
+pub extern "C" fn panic(info: &PanicInfo) -> ! {
+    println!("PANIC: {}", info);
     loop {}
 }
